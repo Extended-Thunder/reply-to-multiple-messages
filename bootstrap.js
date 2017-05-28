@@ -106,10 +106,24 @@ function loadIntoWindow(window) {
     new_menuitem.setAttribute("id", "rtmm_menu_replyAll");
     new_menuitem.setAttribute("label", "Reply All to Selected");
     // Closure so we have access to window.
-    replyToSelectedClosure = function(event) {
+    var replyAllToSelectedClosure = function(event) {
         replyAllToSelected(window); };
-    new_menuitem.addEventListener("command", replyToSelectedClosure);
+    new_menuitem.addEventListener("command", replyAllToSelectedClosure);
     menu.insertBefore(new_menuitem, old_menuitem);
+
+    var contextMenu = document.getElementById("mailContext");
+    old_menuitem = document.getElementById("mailContext-forward");
+    new_menuitem = document.createElement("menuitem");
+    new_menuitem.setAttribute("id", "rtmm_menuContext_reply");
+    new_menuitem.setAttribute("label", "Reply to Selected");
+    new_menuitem.addEventListener("command", replyToSelectedClosure);
+    contextMenu.insertBefore(new_menuitem, old_menuitem);
+
+    new_menuitem = document.createElement("menuitem");
+    new_menuitem.setAttribute("id", "rtmm_menuContext_replyAll");
+    new_menuitem.setAttribute("label", "Reply All to Selected");
+    new_menuitem.addEventListener("command", replyAllToSelectedClosure);
+    contextMenu.insertBefore(new_menuitem, old_menuitem);
 
     // So, the object here is for the menu command to be greyed out when no
     // messages are selected. For other command in this menu, that's
@@ -131,10 +145,13 @@ function loadIntoWindow(window) {
     rtmmCommands.setAttribute("commandupdater", "true");
     rtmmCommands.setAttribute("events", "create-menu-message");
     // Closure so we have access to window in the event listener.
-    var updateMenuItemsClosure = function(event) { updateMenuItems(window); };
+    var updateMenuItemsClosure = function(event) {
+        updateMenuItems(window, updateMenuItemsClosure); };
     rtmmCommands.addEventListener("commandupdate", updateMenuItemsClosure);
 
     mailCommands.appendChild(rtmmCommands);
+
+    contextMenu.addEventListener("popupshowing", updateMenuItemsClosure);
 }
 
 function unloadFromWindow(window) {
@@ -150,6 +167,12 @@ function unloadFromWindow(window) {
     var menuitem = document.getElementById("rtmm_menu_replyAll");
     menu.removeChild(menuitem);
     menuitem = document.getElementById("rtmm_menu_reply");
+    menu.removeChild(menuitem);
+
+    menu = document.getElementById("mailContext");
+    menuitem = document.getElementById("rtmm_menuContext_replyAll");
+    menu.removeChild(menuitem);
+    menuitem = document.getElementById("rtmm_menuContext_reply");
     menu.removeChild(menuitem);
 }
 
@@ -402,15 +425,28 @@ function replyAllToSelected(window) {
     return replyToSelectedExtended(window, true);
 }
 
-function updateMenuItems(window) {
+function updateMenuItems(window, listener) {
     logger.debug("Entering updateMenuItems");
     var document = window.document;
+    var command = document.getElementById("rtmm_menu_reply");
+    if (! command) {
+        // Add-on has been disabled.
+        var contextMenu = document.getElementById("mailContext");
+        contextMenu.removeEventListener("popupshowing", listener);
+        logger.debug("Removed listener from context menu");
+        return;
+    }
     var gFolderDisplay = window["gFolderDisplay"];
     var disabled = gFolderDisplay.selectedCount < 2;
-    var command = document.getElementById("rtmm_menu_reply");
     command.disabled = disabled;
     command = document.getElementById("rtmm_menu_replyAll");
     command.disabled = disabled;
+    command = document.getElementById("rtmm_menuContext_reply");
+    command.disabled = disabled;
+    command.hidden = disabled;
+    command = document.getElementById("rtmm_menuContext_replyAll");
+    command.disabled = disabled;
+    command.hidden = disabled;
 }
 
 function loadDefaultPreferences(installPath) {
