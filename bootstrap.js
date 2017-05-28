@@ -444,6 +444,12 @@ function updateMenuItems(window, listener) {
     }
     var gFolderDisplay = window["gFolderDisplay"];
     var disabled = gFolderDisplay.selectedCount < 2;
+    if (disabled) {
+        logger.debug("Disabling menu items");
+    }
+    else {
+        logger.debug("Enabling menu items");
+    }
     command.disabled = disabled;
     command = document.getElementById("rtmm_menu_replyAll");
     command.disabled = disabled;
