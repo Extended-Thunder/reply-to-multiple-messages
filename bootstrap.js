@@ -6,10 +6,13 @@ Components.utils.import("resource:///modules/gloda/log4moz.js");
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource:///modules/mailServices.js");
 
-logger = Log4Moz.getConfiguredLogger("extensions.reply-to-multiple-messages",
-                                     Log4Moz.Level.Trace,
-                                     Log4Moz.Level.Info,
-                                     Log4Moz.Level.Debug);
+prefBranch = Services.prefs;
+prefPrefix = "extensions.reply-to-multiple-messages";
+bccPref = prefPrefix + ".use_bcc";
+refsPref = prefPrefix + ".hide_references";
+
+defaultPreferencesLoaderLink =
+     "chrome://reply-to-multiple-messages/content/defaultPreferencesLoader.jsm";
 
 function startup(data, reason) {
     /// Bootstrap data structure @see https://developer.mozilla.org/en-US/docs/Extensions/Bootstrapped_extensions#Bootstrap_data
@@ -24,6 +27,8 @@ function startup(data, reason) {
     ///   ADDON_INSTALL
     ///   ADDON_UPGRADE
     ///   ADDON_DOWNGRADE
+    loadDefaultPreferences(data.installPath);
+    initLogging();
     forEachOpenWindow(loadIntoWindow);
     Services.wm.addListener(WindowListener);
 }
@@ -46,6 +51,7 @@ function shutdown(data, reason) {
 
     forEachOpenWindow(unloadFromWindow);
     Services.wm.removeListener(WindowListener);
+    unloadDefaultPreferences();
 
     // HACK WARNING: The Addon Manager does not properly clear all addon
     //               related caches on update; in order to fully update images
@@ -328,6 +334,9 @@ function replyToSelectedExtended(window, replyAll) {
         }
     }
 
+    var use_bcc = prefBranch.getBoolPref(bccPref);
+    var hide_references = prefBranch.getBoolPref(refsPref);
+
     var inReplyTo = collectedInReplyTo.stringify();
 
     if (inReplyTo) {
@@ -357,15 +366,27 @@ function replyToSelectedExtended(window, replyAll) {
     var fields = Components.
         classes["@mozilla.org/messengercompose/composefields;1"].
         createInstance(Components.interfaces.nsIMsgCompFields);
-    fields.to = recipients;
     fields.subject = subject;
-    if (replyAll && ccs) {
-        fields.cc = ccs;
+    if (use_bcc) {
+        collectedRecipients.add(ccs);
+        fields.bcc = collectedRecipients.stringify("");
+        logger.debug("Using BCC field");
     }
-    // N.B. I can't set In-Reply-To right now. See
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1368345 .
-    if (references) {
-        fields.references = references;
+    else {
+        fields.to = recipients;
+        if (replyAll && ccs) {
+            fields.cc = ccs;
+        }
+    }
+    if (hide_references) {
+        logger.debug("Omitting references");
+    }
+    else {
+        // N.B. I can't set In-Reply-To right now. See
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1368345 .
+        if (references) {
+            fields.references = references;
+        }
     }
     params.type = Components.interfaces.nsIMsgCompType.New;
     params.format = Components.interfaces.nsIMsgCompFormat.Default;
@@ -391,3 +412,32 @@ function updateMenuItems(window) {
     command = document.getElementById("rtmm_menu_replyAll");
     command.disabled = disabled;
 }
+
+function loadDefaultPreferences(installPath) {
+    Components.utils.import(defaultPreferencesLoaderLink);
+
+    this.defaultPreferencesLoader = new DefaultPreferencesLoader(installPath);
+    this.defaultPreferencesLoader.parseDirectory();
+}
+function unloadDefaultPreferences() {
+    this.defaultPreferencesLoader.clearDefaultPrefs();
+
+    Components.utils.unload(defaultPreferencesLoaderLink);
+}
+
+function initLogging() {
+    try {
+        delete Log4Moz.repository._loggers[prefPrefix];
+    }
+    catch (ex) {}
+    logger = Log4Moz.getConfiguredLogger(prefPrefix,
+                                         Log4Moz.Level.Trace,
+                                         Log4Moz.Level.Info,
+                                         Log4Moz.Level.Debug);
+    observer = { observe: initLogging }
+    Services.prefs.addObserver(prefPrefix + ".logging.console", observer,
+                               false);
+    Services.prefs.addObserver(prefPrefix + ".logging.dump", observer, false);
+    logger.debug("Initialized logging for Reply to Multiple Messages");
+}
+
