@@ -349,6 +349,28 @@ function replyToSelectedExtended(window, replyAll) {
     }
     logger.debug("In-Reply-To: " + inReplyTo);
     logger.debug("References: " + references);
+
+    var msgComposeService = MailServices.compose;
+    var params = Components.
+        classes["@mozilla.org/messengercompose/composeparams;1"].
+        createInstance(Components.interfaces.nsIMsgComposeParams);
+    var fields = Components.
+        classes["@mozilla.org/messengercompose/composefields;1"].
+        createInstance(Components.interfaces.nsIMsgCompFields);
+    fields.to = recipients;
+    fields.subject = subject;
+    if (replyAll && ccs) {
+        fields.cc = ccs;
+    }
+    // N.B. I can't set In-Reply-To right now. See
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1368345 .
+    if (references) {
+        fields.references = references;
+    }
+    params.type = Components.interfaces.nsIMsgCompType.New;
+    params.format = Components.interfaces.nsIMsgCompFormat.Default;
+    params.composeFields = fields;
+    msgComposeService.OpenComposeWindowWithParams(null, params);
 }
 
 function replyToSelected(window) {
