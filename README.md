@@ -16,13 +16,13 @@ In the add-on's preferences, you can also tell it not to put the message IDs of 
 Availability
 ------------
 
-https://github.com/jikamens/reply-to-multiple-messages
+https://github.com/jikamens/reply-to-multiple-messages<br/>
 https://addons.mozilla.org/thunderbird/addon/reply-to-multiple-messages/
 
 Copyright
 ---------
 
-Copyright 2017 Jonathan Kamens
+Copyright 2017 Jonathan Kamens.
 
 License
 -------
