@@ -231,6 +231,9 @@ function IdList() {
     this.strIds = "";
 }
 IdList.prototype.add = function(strNewIds) {
+    // Whitespace between IDs is optional in the RFC, so add it if it's
+    // missing before splitting.
+    strNewIds = strNewIds.replace(/>([^\s])/g, '> $1');
     var newIds = strNewIds.split(/\s+/);
     for (var i in newIds) {
         if (this.strIds.indexOf(newIds[i]) == -1) {
