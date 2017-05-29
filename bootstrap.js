@@ -297,6 +297,115 @@ SmartReplySubject.prototype.stringify = function() {
     return "Re: " + stripped;
 }
 
+function IdentityFinder() {
+    this.serverIdentities = [];
+    this.addressIdentities = [];
+}
+IdentityFinder.prototype.addMessage = function(hdr) {
+    // Count the first identity of the server of the folder the message is in.
+    // Count the identities associated with recipient email addresses.
+    var accountManager = MailServices.accounts;
+    var server = hdr.folder.server;
+    serverIdentity = accountManager.getFirstIdentityForServer(server);
+    if (serverIdentity) {
+        key = serverIdentity.key;
+        if (this.serverIdentities[key]) {
+            this.serverIdentities[key]++;
+        }
+        else {
+            this.serverIdentities[key] = 1;
+        }
+        logger.debug("IdentityFinder: Counted identity " +
+                     serverIdentity.email + " (" + serverIdentity.key +
+                     ") for folder server");
+    }
+
+    var headerParser = MailServices.headerParser;
+    var recipients = headerParser.extractHeaderAddressMailboxes(
+        hdr.getStringProperty("recipients"));
+    var ccs = headerParser.extractHeaderAddressMailboxes(
+        hdr.getStringProperty("ccList"));
+    var recipientAddresses = recipients.split(",").concat(ccs.split(","));
+    for (var i in recipientAddresses) {
+        this.addAddress(server, recipientAddresses[i]);
+    }
+}
+IdentityFinder.prototype.addAddress = function(server, addr) {
+    // First try to find the address in the server's identities. If that
+    // doesn't work, fall back on finding the address in all available
+    // identities.
+    if (! addr) {
+        return;
+    }
+    var accountManager = MailServices.accounts;
+    if (this.addAddressIdentity(
+        accountManager.getIdentitiesForServer(server).enumerate(), addr)) {
+        logger.debug("IdentityFinder: Found identity for " + addr +
+                     " on server of folder");
+        return;
+    }
+    if (this.addAddressIdentity(
+        accountManager.allIdentities.enumerate(), addr)) {
+        logger.debug("IdentityFinder: Found identity for " + addr +
+                     " on different server");
+    }
+    else {
+        logger.debug("IdentityFinder: Could not find identity for " + addr);
+    }
+}
+IdentityFinder.prototype.addAddressIdentity = function(identities, addr) {
+    addr = addr.toLowerCase();
+    while (identities.hasMoreElements()) {
+        var identity = identities.getNext();
+        var email = identity.email;
+        if (email && email.toLowerCase() == addr) {
+            var key = identity.key;
+            if (this.addressIdentities[key]) {
+                this.addressIdentities[key]++;
+            }
+            else {
+                this.addressIdentities[key] = 1;
+            }
+            logger.debug("IdentityFinder: Counted identity " + email + " (" +
+                         key + ") for recipient");
+            return true;
+        }
+    }
+    return false;
+}
+IdentityFinder.prototype.get = function() {
+    // If we successfully identified any addressee identities, then use the one
+    // that got the votes. Otherwise, use the server identity that got the most
+    // votes.
+    var accountManager = MailServices.accounts;
+    var max = 0;
+    var maxKey;
+    for (var key in this.addressIdentities) {
+        if (this.addressIdentities[key] > max) {
+            max = this.addressIdentities[key]
+            maxKey = key;
+        }
+    }
+    if (max) {
+        logger.debug("IdentityFinder: Using identity " + maxKey + " (" + max +
+                     " votes)");
+        return accountManager.getIdentity(maxKey);
+    }
+    for (var key in this.serverIdentities) {
+        if (this.serverIdentities[key] > max) {
+            max = this.serverIdentities[key];
+            maxKey = key;
+        }
+    }
+    if (max) {
+        logger.debug("IdentityFinder: Using identity " + maxKey + " (" + max +
+                     " votes)");
+        return accountManager.getIdentity(maxKey);
+    }
+    logger.debug("IdentityFinder: Using default identity");
+    return null;
+}
+
 function replyToSelectedExtended(window, replyAll) {
     logger.debug("Entering replyToSelected");
     var tmp;
@@ -315,10 +424,12 @@ function replyToSelectedExtended(window, replyAll) {
     var collectedReferences = new IdList();
     var collectedInReplyTo = new IdList();
     var collectedSubject = new SmartReplySubject();
+    var identityFinder = new IdentityFinder();
 
     for (var i in gFolderDisplay.selectedMessages) {
         var msg = gFolderDisplay.selectedMessages[i];
         logger.debug("----------");
+        identityFinder.addMessage(msg);
         var subject = msg.getStringProperty("subject");
         // Wrapping this and the subsequent ones in the if isn't actually
         // functionally necessary, but it reduces unnecessary logging.
@@ -395,6 +506,7 @@ function replyToSelectedExtended(window, replyAll) {
     var params = Components.
         classes["@mozilla.org/messengercompose/composeparams;1"].
         createInstance(Components.interfaces.nsIMsgComposeParams);
+    params.identity = identityFinder.get();
     var fields = Components.
         classes["@mozilla.org/messengercompose/composefields;1"].
         createInstance(Components.interfaces.nsIMsgCompFields);
@@ -491,4 +603,3 @@ function initLogging() {
     Services.prefs.addObserver(prefPrefix + ".logging.dump", observer, false);
     logger.debug("Initialized logging for Reply to Multiple Messages");
 }
-
