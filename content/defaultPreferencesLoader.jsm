@@ -20,16 +20,40 @@ var EXPORTED_SYMBOLS = ['DefaultPreferencesLoader'];
  * Read defaults/preferences/* and set Services.pref default branch
  */
 function DefaultPreferencesLoader(installPath) {
-    let readFrom = installPath.clone(); // don't modify the original object
+    var readFrom = [];
 
-    ['defaults', 'preferences'].forEach(function(dir) {
-        readFrom.append(dir);
-    });
+    // Maybe instead just test if it's a file rather than a directory?
+    // Not sure.
+    if (/\.xpi$/i.test(installPath.path)) {
+        let baseURI = Services.io.newFileURI(installPath);
+        // Packed extension, need to read ZIP to get list of preference files
+        // and then use "jar:" URIs to access them.
+        let zr = Cc['@mozilla.org/libjar/zip-reader;1'].createInstance(
+            Ci.nsIZipReader);
+        zr.open(installPath);
+        let entries = zr.findEntries('defaults/preferences/?*');
+        while (entries.hasMore()) {
+            let entry = entries.getNext();
+            readFrom.push('jar:' + baseURI.spec + "!/" + entry);
+        }
+    }
+    else {
+        let dirPath = installPath.clone(); // don't modify the original object
 
-    this.baseURI = Services.io.newFileURI(readFrom);
+        ['defaults', 'preferences'].forEach(function(dir) {
+            dirPath.append(dir);
+        });
 
-    if (readFrom.exists() !== true) {
-        throw new DefaultsDirectoryMissingError(readFrom);
+        if (dirPath.exists() !== true) {
+            throw new DefaultsDirectoryMissingError(dirPath);
+        }
+
+        let entries = dirPath.directoryEntries;
+
+        while (entries.hasMoreElements()) {
+            let fileURI = Services.io.newFileURI(entries.getNext());
+            readFrom.push(fileURI.spec);
+        }
     }
 
     this.readFrom = readFrom;
@@ -47,13 +71,9 @@ DefaultPreferencesLoader.prototype = {
     parseDirectory: function(prefFunc) {
         prefFunc = prefFunc || this.pref.bind(this);
 
-	let entries = this.readFrom.directoryEntries;
-
-	while (entries.hasMoreElements()) {
-	    let fileURI = Services.io.newFileURI(entries.getNext());
-
-	    Services.scriptloader.loadSubScript(fileURI.spec, { pref: prefFunc });
-	}
+        this.readFrom.forEach(function(uri) {
+	    Services.scriptloader.loadSubScript(uri, { pref: prefFunc });
+	});
     },
 
     /**
