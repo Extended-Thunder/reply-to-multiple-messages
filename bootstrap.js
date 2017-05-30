@@ -134,19 +134,21 @@ function loadIntoWindow(window) {
     // Isn't it just AWESOME what I have to add these menu commands in THREE
     // DIFFERENT PLACES?! Way, to go, Thunderbird developers, great job making
     // it easy for add-on developers to add new commands!
-    var appMenu = document.getElementById("appmenu_messageMenuPopup");
-    old_menuitem = document.getElementById("appmenu_forwardMsg");
-    new_menuitem = document.createElement("menuitem");
-    new_menuitem.setAttribute("id", "rtmm_appmenu_reply");
-    new_menuitem.setAttribute("label", "Reply to Selected");
-    new_menuitem.addEventListener("command", replyToSelectedClosure);
-    appMenu.insertBefore(new_menuitem, old_menuitem);
+    if (! isSeaMonkey()) {
+        var appMenu = document.getElementById("appmenu_messageMenuPopup");
+        old_menuitem = document.getElementById("appmenu_forwardMsg");
+        new_menuitem = document.createElement("menuitem");
+        new_menuitem.setAttribute("id", "rtmm_appmenu_reply");
+        new_menuitem.setAttribute("label", "Reply to Selected");
+        new_menuitem.addEventListener("command", replyToSelectedClosure);
+        appMenu.insertBefore(new_menuitem, old_menuitem);
 
-    new_menuitem = document.createElement("menuitem");
-    new_menuitem.setAttribute("id", "rtmm_appmenu_replyAll");
-    new_menuitem.setAttribute("label", "Reply All to Selected");
-    new_menuitem.addEventListener("command", replyAllToSelectedClosure);
-    appMenu.insertBefore(new_menuitem, old_menuitem);
+        new_menuitem = document.createElement("menuitem");
+        new_menuitem.setAttribute("id", "rtmm_appmenu_replyAll");
+        new_menuitem.setAttribute("label", "Reply All to Selected");
+        new_menuitem.addEventListener("command", replyAllToSelectedClosure);
+        appMenu.insertBefore(new_menuitem, old_menuitem);
+    }
 
     // So, the object here is for the menu command to be greyed out when no
     // messages are selected. For other command in this menu, that's
@@ -198,12 +200,13 @@ function unloadFromWindow(window) {
     menuitem = document.getElementById("rtmm_menuContext_reply");
     menu.removeChild(menuitem);
 
-    menu = document.getElementById("appmenu_messageMenuPopup");
-    menuitem = document.getElementById("rtmm_appmenu_replyAll");
-    menu.removeChild(menuitem);
-    menuitem = document.getElementById("rtmm_appmenu_reply");
-    menu.removeChild(menuitem);
-    
+    if (! isSeaMonkey()) {
+        menu = document.getElementById("appmenu_messageMenuPopup");
+        menuitem = document.getElementById("rtmm_appmenu_replyAll");
+        menu.removeChild(menuitem);
+        menuitem = document.getElementById("rtmm_appmenu_reply");
+        menu.removeChild(menuitem);
+    }    
 }
 
 function forEachOpenWindow(todo) { // Apply a function to all open windows
@@ -598,12 +601,15 @@ function updateMenuItems(window, listener) {
     command = document.getElementById("rtmm_menuContext_replyAll");
     command.disabled = disabled;
     command.hidden = disabled;
-    command = document.getElementById("rtmm_appmenu_reply");
-    command.disabled = disabled;
-    command.hidden = disabled;
-    command = document.getElementById("rtmm_appmenu_replyAll");
-    command.disabled = disabled;
-    command.hidden = disabled;
+
+    if (! isSeaMonkey()) {
+        command = document.getElementById("rtmm_appmenu_reply");
+        command.disabled = disabled;
+        command.hidden = disabled;
+        command = document.getElementById("rtmm_appmenu_replyAll");
+        command.disabled = disabled;
+        command.hidden = disabled;
+    }
 }
 
 function loadDefaultPreferences(installPath) {
@@ -632,4 +638,19 @@ function initLogging() {
                                false);
     Services.prefs.addObserver(prefPrefix + ".logging.dump", observer, false);
     logger.debug("Initialized logging for Reply to Multiple Messages");
+}
+
+function isSeaMonkey() {
+    return(appName() == "SeaMonkey");
+}
+
+_appName = null;
+
+function appName() {
+    if (! _appName) {
+        var appInfo = Components.classes["@mozilla.org/xre/app-info;1"]
+            .getService(Components.interfaces.nsIXULAppInfo);
+        _appName = appInfo.name;
+    }
+    return _appName;
 }
