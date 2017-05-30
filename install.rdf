@@ -9,7 +9,7 @@
     <em:id>reply-to-multiple-messages@kamens.us</em:id>
     <em:type>2</em:type>
     <em:name>Reply to Multiple Messages</em:name>
-    <em:version>1.0beta1</em:version>
+    <em:version>1.0beta2</em:version>
     <em:creator>Jonathan Kamens</em:creator>
     <em:description>Add a "Reply to Selected" menu command which opens a message composition window replying to the messages currently selected in the thread pane, using their Reply-To or From lines to determine the intended recipients for the reply. If the selected messages all have similar Subject lines, set the Subject line in the composition window based on them. Also add a "Reply All to Selected" command which also includes the recipients of the selected messages in the recipient list of the reply. A preference setting may be enabled to place all addressees of the reply in the "BCC" header rather than in "To" and "CC".</em:description>
     <em:homepageURL>https://addons.mozilla.org/en-US/thunderbird/addon/reply-to-multiple-messages</em:homepageURL>
