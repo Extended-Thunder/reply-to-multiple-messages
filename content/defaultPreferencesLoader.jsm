@@ -81,27 +81,31 @@ DefaultPreferencesLoader.prototype = {
      */
     pref: function(key, value) {
         switch (typeof value) {
-            case 'boolean':
-                this.defaultBranch.setBoolPref(key, value);
-                break;
+        case 'boolean':
+            this.defaultBranch.setBoolPref(key, value);
+            break;
 
-            case 'number':
-                this.defaultBranch.setIntPref(key, value);
-                break;
+        case 'number':
+            this.defaultBranch.setIntPref(key, value);
+            break;
 
-            case 'string':
-                /**
-                 * Using setComplexValue instead of setCharPref because of
-                 * unicode support
-                 */
-                let str = Cc["@mozilla.org/supports-string;1"].createInstance(Ci.nsISupportsString);
+        case 'string':
+            try {
+                // Gecko 58+
+                this.defaultBranch.setStringPref(key, value);
+            }
+            catch (ex) {
+                let str = Cc["@mozilla.org/supports-string;1"].createInstance(
+                    Ci.nsISupportsString);
                 str.data = value;
-                this.defaultBranch.setComplexValue(key, Ci.nsISupportsString, str);
-                break;
+                this.defaultBranch.setComplexValue(
+                    key, Ci.nsISupportsString, str);
+            }
+            break;
 
-            default:
-                throw new NotSupportedValueTypeError(key);
-                break;
+        default:
+            throw new NotSupportedValueTypeError(key);
+            break;
         }
     },
 
