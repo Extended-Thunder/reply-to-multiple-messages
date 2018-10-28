@@ -5,6 +5,7 @@
 
      Copyright 2017 Jonathan Kamens. -->
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet type="text/css" href="chrome://messenger/skin/preferences/preferences.css"?>
 <prefwindow
     id="rtmm-prefwindow"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
