@@ -8,17 +8,15 @@
 // Also, lots of code here cribbed from
 // https://developer.mozilla.org/en-US/Add-ons/How_to_convert_an_overlay_extension_to_restartless
 
-Components.utils.import("resource:///modules/gloda/log4moz.js");
-Components.utils.import("resource://gre/modules/Services.jsm");
-Components.utils.import("resource:///modules/mailServices.js");
+const {Log4Moz} = ChromeUtils.import("resource:///modules/gloda/log4moz.js");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {MailServices} = ChromeUtils.import(
+    "resource:///modules/MailServices.jsm");
 
 prefBranch = Services.prefs;
 prefPrefix = "extensions.reply-to-multiple-messages";
 bccPref = prefPrefix + ".use_bcc";
 refsPref = prefPrefix + ".hide_references";
-
-defaultPreferencesLoaderLink =
-     "chrome://reply-to-multiple-messages/content/defaultPreferencesLoader.jsm";
 
 function startup(data, reason) {
     /// Bootstrap data structure @see https://developer.mozilla.org/en-US/docs/Extensions/Bootstrapped_extensions#Bootstrap_data
@@ -33,7 +31,7 @@ function startup(data, reason) {
     ///   ADDON_INSTALL
     ///   ADDON_UPGRADE
     ///   ADDON_DOWNGRADE
-    loadDefaultPreferences(data.installPath);
+    loadDefaultPreferences();
     initLogging();
     forEachOpenWindow(loadIntoWindow);
     Services.wm.addListener(WindowListener);
@@ -57,7 +55,6 @@ function shutdown(data, reason) {
 
     forEachOpenWindow(unloadFromWindow);
     Services.wm.removeListener(WindowListener);
-    unloadDefaultPreferences();
 
     // HACK WARNING: The Addon Manager does not properly clear all addon
     //               related caches on update; in order to fully update images
@@ -612,16 +609,11 @@ function updateMenuItems(window, listener) {
     }
 }
 
-function loadDefaultPreferences(installPath) {
-    Components.utils.import(defaultPreferencesLoaderLink);
-
-    this.defaultPreferencesLoader = new DefaultPreferencesLoader(installPath);
-    this.defaultPreferencesLoader.parseDirectory();
-}
-function unloadDefaultPreferences() {
-    this.defaultPreferencesLoader.clearDefaultPrefs();
-
-    Components.utils.unload(defaultPreferencesLoaderLink);
+function loadDefaultPreferences() {
+    var {DefaultPreferencesLoader} = ChromeUtils.import(
+        "chrome://reply-to-multiple-messages/content/defaultPreferencesLoader.jsm");
+    var loader = new DefaultPreferencesLoader();
+    loader.parseUri("chrome://reply-to-multiple-messages/content/prefs.js");
 }
 
 function initLogging() {
