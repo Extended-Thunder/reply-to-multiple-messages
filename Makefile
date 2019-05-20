@@ -1,6 +1,6 @@
 FILES := LICENSE README.md bootstrap.js chrome.manifest \
          content/defaultPreferencesLoader.jsm content/options.xul \
-         content/prefs.js icon.png icon64.png install.rdf
+         content/prefs.js icon.png icon64.png manifest.json
 
 all: reply-to-multiple-messages.xpi
 

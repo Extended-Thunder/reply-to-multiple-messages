@@ -17,8 +17,14 @@ prefBranch = Services.prefs;
 prefPrefix = "extensions.reply-to-multiple-messages";
 bccPref = prefPrefix + ".use_bcc";
 refsPref = prefPrefix + ".hide_references";
+prefsLoaded = false;
 
 function startup(data, reason) {
+    setEverythingUp("startup");
+    logger.trace("startup");
+}
+
+function setEverythingUp(which) {
     /// Bootstrap data structure @see https://developer.mozilla.org/en-US/docs/Extensions/Bootstrapped_extensions#Bootstrap_data
     ///   string id
     ///   string version
@@ -33,11 +39,17 @@ function startup(data, reason) {
     ///   ADDON_DOWNGRADE
     loadDefaultPreferences();
     initLogging();
-    forEachOpenWindow(loadIntoWindow);
-    Services.wm.addListener(WindowListener);
+    logger.trace("setEverythingUp");
+    if (which == "startup") {
+        Services.obs.addObserver(WindowObserver, "mail-startup-done", false);
+        forEachOpenWindow(loadIntoWindow);
+    }
 }
 
 function shutdown(data, reason) {
+    try {
+        logger.trace("shutdown");
+    } catch {}
     /// Bootstrap data structure @see https://developer.mozilla.org/en-US/docs/Extensions/Bootstrapped_extensions#Bootstrap_data
     ///   string id
     ///   string version
@@ -54,7 +66,7 @@ function shutdown(data, reason) {
         return;
 
     forEachOpenWindow(unloadFromWindow);
-    Services.wm.removeListener(WindowListener);
+    Services.obs.removeObserver(WindowObserver, "mail-startup-done");
 
     // HACK WARNING: The Addon Manager does not properly clear all addon
     //               related caches on update; in order to fully update images
@@ -63,6 +75,8 @@ function shutdown(data, reason) {
 }
 
 function install(data, reason) {
+    setEverythingUp("install");
+    logger.trace("install");
     /// Bootstrap data structure @see https://developer.mozilla.org/en-US/docs/Extensions/Bootstrapped_extensions#Bootstrap_data
     ///   string id
     ///   string version
@@ -76,6 +90,7 @@ function install(data, reason) {
 }
 
 function uninstall(data, reason) {
+    logger.trace("uninstall");
     /// Bootstrap data structure @see https://developer.mozilla.org/en-US/docs/Extensions/Bootstrapped_extensions#Bootstrap_data
     ///   string id
     ///   string version
@@ -89,9 +104,15 @@ function uninstall(data, reason) {
 }
 
 function loadIntoWindow(window) {
+    logger.trace("loadInToWindow");
     var document = window.document;
     var menu = document.getElementById("messageMenuPopup");
     if (! menu) {
+        return;
+    }
+
+    if (document.getElementById("rtmm_menu_reply")) {
+        // Already done during startup!
         return;
     }
 
@@ -177,6 +198,7 @@ function loadIntoWindow(window) {
 }
 
 function unloadFromWindow(window) {
+    logger.trace("unloadFromWindow");
     /* call/move your UI tear down function here */
     document = window.document;
 
@@ -207,6 +229,7 @@ function unloadFromWindow(window) {
 }
 
 function forEachOpenWindow(todo) { // Apply a function to all open windows
+    logger.trace("forEachOpenWindow");
     var windows = Services.wm.getEnumerator("mail:3pane");
     while (windows.hasMoreElements()) {
         todo(windows.getNext().QueryInterface(
@@ -214,20 +237,15 @@ function forEachOpenWindow(todo) { // Apply a function to all open windows
     }
 }
 
-var WindowListener = {
-    onOpenWindow: function(xulWindow) {
-        var window = xulWindow.QueryInterface(
-            Components.interfaces.nsIInterfaceRequestor).
-            getInterface(Components.interfaces.nsIDOMWindow);
-        function onWindowLoad() {
-            window.removeEventListener("load",onWindowLoad);
-            var document = window.document;
-            if (document.documentElement.getAttribute("windowtype") ==
-                "mail:3pane") {
-                loadIntoWindow(window);
-            }
+var WindowObserver = {
+    observe: function(aSubject, aTopic, aData) {
+        logger.trace("WindowObserver.observe");
+        var window = aSubject;
+        var document = window.document;
+        if (document.documentElement.getAttribute("windowtype") ==
+            "mail:3pane") {
+            loadIntoWindow(window);
         }
-        window.addEventListener("load",onWindowLoad);
     },
 };
 
@@ -501,6 +519,7 @@ function replyToSelectedExtended(window, replyAll) {
         }
     }
 
+    loadDefaultPreferences(); // Just in case it failed before
     var use_bcc = prefBranch.getBoolPref(bccPref);
     var hide_references = prefBranch.getBoolPref(refsPref);
 
@@ -610,10 +629,26 @@ function updateMenuItems(window, listener) {
 }
 
 function loadDefaultPreferences() {
-    var {DefaultPreferencesLoader} = ChromeUtils.import(
-        "chrome://reply-to-multiple-messages/content/defaultPreferencesLoader.jsm");
+    try {
+        // Might not be defined yet
+        logger.trace("loadDefaultPreferences");
+    } catch {}
+    if (prefsLoaded) {
+        return;
+    }
+    // This might fail during add-on installation.
+    try {
+        var {DefaultPreferencesLoader} = ChromeUtils.import(
+            "chrome://reply-to-multiple-messages/content/" +
+            "defaultPreferencesLoader.jsm");
+    }
+    catch {
+        return;
+    }
     var loader = new DefaultPreferencesLoader();
     loader.parseUri("chrome://reply-to-multiple-messages/content/prefs.js");
+    initLogging();
+    prefsLoaded = true;
 }
 
 function initLogging() {

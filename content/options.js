@@ -8,6 +8,14 @@ var RTMMOptions = {
     ],
         
     LoadPrefs: function() {
+        // When the add-on is first installed loading default preferences fails,
+        // so we need to redo it here just in case.
+        var {DefaultPreferencesLoader} = ChromeUtils.import(
+            "chrome://reply-to-multiple-messages/content/" +
+            "defaultPreferencesLoader.jsm");
+        var loader = new DefaultPreferencesLoader();
+        loader.parseUri("chrome://reply-to-multiple-messages/content/prefs.js");
+
         if (! RTMMOptions.prefBranch) {
             RTMMOptions.prefBranch =
                 Components.classes["@mozilla.org/preferences-service;1"]
