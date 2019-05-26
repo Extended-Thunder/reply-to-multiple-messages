@@ -118,7 +118,7 @@ function loadIntoWindow(window) {
 
     var old_menuitem = document.getElementById("menu_forwardMsg");
 
-    var new_menuitem = document.createElement("menuitem");
+    var new_menuitem = document.createXULElement("menuitem");
     new_menuitem.setAttribute("id", "rtmm_menu_reply");
     new_menuitem.setAttribute("label", "Reply to Selected");
     // Closure so we have access to window.
@@ -126,7 +126,7 @@ function loadIntoWindow(window) {
     new_menuitem.addEventListener("command", replyToSelectedClosure);
     menu.insertBefore(new_menuitem, old_menuitem);
 
-    new_menuitem = document.createElement("menuitem");
+    new_menuitem = document.createXULElement("menuitem");
     new_menuitem.setAttribute("id", "rtmm_menu_replyAll");
     new_menuitem.setAttribute("label", "Reply All to Selected");
     // Closure so we have access to window.
@@ -137,13 +137,13 @@ function loadIntoWindow(window) {
 
     var contextMenu = document.getElementById("mailContext");
     old_menuitem = document.getElementById("mailContext-forward");
-    new_menuitem = document.createElement("menuitem");
+    new_menuitem = document.createXULElement("menuitem");
     new_menuitem.setAttribute("id", "rtmm_menuContext_reply");
     new_menuitem.setAttribute("label", "Reply to Selected");
     new_menuitem.addEventListener("command", replyToSelectedClosure);
     contextMenu.insertBefore(new_menuitem, old_menuitem);
 
-    new_menuitem = document.createElement("menuitem");
+    new_menuitem = document.createXULElement("menuitem");
     new_menuitem.setAttribute("id", "rtmm_menuContext_replyAll");
     new_menuitem.setAttribute("label", "Reply All to Selected");
     new_menuitem.addEventListener("command", replyAllToSelectedClosure);
@@ -155,13 +155,13 @@ function loadIntoWindow(window) {
     if (! isSeaMonkey()) {
         var appMenu = document.getElementById("appmenu_messageMenuPopup");
         old_menuitem = document.getElementById("appmenu_forwardMsg");
-        new_menuitem = document.createElement("menuitem");
+        new_menuitem = document.createXULElement("menuitem");
         new_menuitem.setAttribute("id", "rtmm_appmenu_reply");
         new_menuitem.setAttribute("label", "Reply to Selected");
         new_menuitem.addEventListener("command", replyToSelectedClosure);
         appMenu.insertBefore(new_menuitem, old_menuitem);
 
-        new_menuitem = document.createElement("menuitem");
+        new_menuitem = document.createXULElement("menuitem");
         new_menuitem.setAttribute("id", "rtmm_appmenu_replyAll");
         new_menuitem.setAttribute("label", "Reply All to Selected");
         new_menuitem.addEventListener("command", replyAllToSelectedClosure);
@@ -183,7 +183,7 @@ function loadIntoWindow(window) {
     // wrong, and it's not like it's documented properly anywhere, so I'm
     // throwing up my hands and doing it in a hacky way.
     var mailCommands = document.getElementById("mailCommands");
-    var rtmmCommands = document.createElement("commandset");
+    var rtmmCommands = document.createXULElement("commandset");
     rtmmCommands.setAttribute("id", "rtmmCommands");
     rtmmCommands.setAttribute("commandupdater", "true");
     rtmmCommands.setAttribute("events", "create-menu-message");
