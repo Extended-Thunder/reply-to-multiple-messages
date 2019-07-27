@@ -230,10 +230,8 @@ function unloadFromWindow(window) {
 
 function forEachOpenWindow(todo) { // Apply a function to all open windows
     logger.trace("forEachOpenWindow");
-    var windows = Services.wm.getEnumerator("mail:3pane");
-    while (windows.hasMoreElements()) {
-        todo(windows.getNext().QueryInterface(
-            Components.interfaces.nsIDOMWindow));
+    for (let window of Services.wm.getEnumerator("mail:3pane")) {
+        todo(window);
     }
 }
 
