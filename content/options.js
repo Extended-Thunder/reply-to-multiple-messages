@@ -76,6 +76,13 @@ var RTMMOptions = {
 
     SetOnLoad: function() {
         window.removeEventListener("load", RTMMOptions.SetOnLoad, false);
+        document.addEventListener("dialogextra1", function(event) {
+            RTMMOptions.LoadPrefs();
+        });
+        document.addEventListener("dialogaccept", function(event) {
+            if (! RTMMOptions.ValidatePrefs())
+                event.preventDefault();
+        });
         RTMMOptions.LoadPrefs();
     },
 };

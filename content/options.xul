@@ -13,10 +13,7 @@
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
     title="Reply to Multiple Messages Preferences"
     buttons="accept,cancel,extra1"
-    buttonlabelextra1="&reset.value;"
-    ondialogextra1="RTMMOptions.LoadPrefs();"
-    ondialogaccept="return RTMMOptions.ValidatePrefs();"
-    onbeforeunload="return RTMMOptions.ValidatePrefs() ? null : 'err';">
+    buttonlabelextra1="&reset.value;">
   <script src="options.js"/>
   <prefpane>
     <vbox>
