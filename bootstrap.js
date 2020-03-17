@@ -13,8 +13,6 @@ const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {MailServices} = ChromeUtils.import(
     "resource:///modules/MailServices.jsm");
 
-var didKickstarter = false;
-
 prefBranch = Services.prefs;
 prefPrefix = "extensions.reply-to-multiple-messages";
 bccPref = prefPrefix + ".use_bcc";
@@ -198,15 +196,6 @@ function loadIntoWindow(window) {
     mailCommands.appendChild(rtmmCommands);
 
     contextMenu.addEventListener("popupshowing", updateMenuItemsClosure);
-
-    if (! didKickstarter) {
-        didKickstarter = true;
-        var {KickstarterPopup} = ChromeUtils.import(
-            "chrome://reply-to-multiple-messages/content/kickstarter.jsm");
-        KickstarterPopup(
-            window,
-            "chrome://reply-to-multiple-messages/content/kickstarter.xul");
-    }
 }
 
 function unloadFromWindow(window) {
