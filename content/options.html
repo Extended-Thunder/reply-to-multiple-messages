@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="chrome://global/skin" type="text/css">
+<link type="text/css" href="chrome://messenger/skin/preferences/preferences.css">
+<script src="options.js"></script>
+</head>
+<body>
+    <div data-tip="Hide addressees of replies in BCC field rather than putting them in To and/or CC." >
+      <input type="checkbox"  id="rtmm-use_bcc-checkbox">
+      <label for="rtmm-use_bcc-checkbox" id="lbl_rtmm-use_bcc">Use BCC field.</label><br>
+    </div>
+    <div>
+       <input type="checkbox"  id="rtmm-hide_references-checkbox">
+       <label for="rtmm-use_bcc-checkbox" id="lbl_rtmm-hide_references">Don't set References header in replies.</label><br>
+    </div>
+    <div data-tip="Specify verbosity of logging to the Error Console.">
+        <label id="Opt_lglvlconsole">Console log level:</label>
+        <select  id="rtmm-consolelevel-menu">
+          <option value="Fatal">Fatal</option>
+          <option value="Error">Error</option>
+          <option value="Warn">Warn</option>
+          <option value="Info">Info</option>
+          <option value="Config">Config</option>
+          <option value="Debug">Debug</option>
+          <option value="Trace">Trace</option>
+          <option value="All">All</option>
+        </select><br>
+    </div>
+    <div data-tip="Specify verbosity of logging to the terminal or log file." >
+        <label id ="Opt_lglvldump">Dump log level:</label>
+        <select  id="rtmm-dumplevel-menu">
+          <option value="Fatal">Fatal</option>
+          <option value="Error">Error</option>
+          <option value="Warn">Warn</option>
+          <option value="Info">Info</option>
+          <option value="Config">Config</option>
+          <option value="Debug">Debug</option>
+          <option value="Trace">Trace</option>
+          <option value="All">All</option>
+        </select>
+    </div>
+<footer>
+    <div>
+        <button id="btn_Save">Save</button>
+        <button id="btn_Cancel">Cancel</button>
+      </div>
+</footer>
+</body>
+</html>

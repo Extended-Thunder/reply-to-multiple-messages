@@ -6,11 +6,11 @@ var RTMMOptions = {
         ["rtmm-dumplevel-menu", "extensions.reply-to-multiple-messages.logging.dump", "char"],
         ["rtmm-consolelevel-menu", "extensions.reply-to-multiple-messages.logging.console", "char"],
     ],
-        
-    LoadPrefs: function() {
+
+    LoadPrefs: async  function() {
         // When the add-on is first installed loading default preferences fails,
         // so we need to redo it here just in case.
-        var {DefaultPreferencesLoader} = ChromeUtils.import(
+      /*  var {DefaultPreferencesLoader} = ChromeUtils.import(
             "chrome://reply-to-multiple-messages/content/" +
             "defaultPreferencesLoader.jsm");
         var loader = new DefaultPreferencesLoader();
@@ -21,8 +21,10 @@ var RTMMOptions = {
                 Components.classes["@mozilla.org/preferences-service;1"]
                 .getService(Components.interfaces.nsIPrefBranch);
         }
+       */
+        browser.rtmm_optAPI.LoadPrefs()
 
-        RTMMOptions.mapping.forEach(function(mapping) {
+        RTMMOptions.mapping.forEach( async function(mapping) {
             var elt_id = mapping[0];
             var elt = document.getElementById(elt_id);
             var pref = mapping[1];
@@ -30,16 +32,16 @@ var RTMMOptions = {
             var pref_func;
             switch (pref_type) {
             case "int":
-                elt.value = RTMMOptions.prefBranch.getIntPref(pref);
+                elt.value = await browser.rtmm_optAPI.getIntPref(pref);
                 break;
             case "bool":
-                elt.checked = RTMMOptions.prefBranch.getBoolPref(pref);
+                elt.checked = await browser.rtmm_optAPI.getBoolPref(pref);
                 break;
             case "string":
-                elt.value = RTMMOptions.prefBranch.getStringPref(pref);
+                elt.value = await browser.rtmm_optAPI.getStringPref(pref);
                 break;
             case "char":
-                elt.value = RTMMOptions.prefBranch.getCharPref(pref);
+                elt.value = await browser.rtmm_optAPI.getCharPref(pref);
                 break;
             default:
                 throw new Error("Unrecognized pref type: " + pref_type);
@@ -56,16 +58,16 @@ var RTMMOptions = {
             var pref_func;
             switch (pref_type) {
             case "int":
-                RTMMOptions.prefBranch.setIntPref(pref, elt.value);
+                browser.rtmm_optAPI.setIntPref(pref, elt.value);
                 break;
             case "bool":
-                RTMMOptions.prefBranch.setBoolPref(pref, elt.checked);
+                browser.rtmm_optAPI.setBoolPref(pref, elt.checked);
                 break;
             case "string":
-                RTMMOptions.prefBranch.setStringPref(pref, elt.value);
+                browser.rtmm_optAPI.setStringPref(pref, elt.value);
                 break;
             case "char":
-                RTMMOptions.prefBranch.setCharPref(pref, elt.value);
+                browser.rtmm_optAPI.setCharPref(pref, elt.value);
                 break;
             default:
                 throw new Error("Unrecognized pref type: " + pref_type);
@@ -76,10 +78,12 @@ var RTMMOptions = {
 
     SetOnLoad: function() {
         window.removeEventListener("load", RTMMOptions.SetOnLoad, false);
-        document.addEventListener("dialogextra1", function(event) {
+        var btn_save = document.getElementById("btn_Save");
+        var btn_Cancel = document.getElementById("btn_Cancel");
+        btn_Cancel.addEventListener("click", function(event) {
             RTMMOptions.LoadPrefs();
         });
-        document.addEventListener("dialogaccept", function(event) {
+        btn_save.addEventListener("click", function(event) {
             if (! RTMMOptions.ValidatePrefs())
                 event.preventDefault();
         });
